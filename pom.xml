@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apHashiCorpSecretRepositoryache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.wso2.carbon</groupId>
+    <artifactId>org.wso2.carbon.securevault.hashicorp</artifactId>
+    <version>1.0</version>
+    <packaging>bundle</packaging>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                        <Export-Package>
+                            org.wso2.carbon.securevault.hashicorp.common;version="${project.version}",
+                            org.wso2.carbon.securevault.hashicorp.config;version="${project.version}",
+                            org.wso2.carbon.securevault.hashicorp.exception;version="${project.version}",
+                            org.wso2.carbon.securevault.hashicorp.repository;version="${project.version}"
+                        </Export-Package>
+                        <Import-Package>
+                            com.bettercloud.vault.*,
+
+                            org.apache.commons.lang;version="${commons-lang.wso2.osgi.version.range}",
+                            org.apache.commons.logging;version="${commons-logging.osgi.version.range}",
+
+                            org.wso2.carbon.securevault.hashicorp.common;version="${org.wso2.carbon.securevault.import.version.range}",
+                            org.wso2.carbon.securevault.hashicorp.config;version="${org.wso2.carbon.securevault.import.version.range}",
+                            org.wso2.carbon.securevault.hashicorp.exception;version="${org.wso2.carbon.securevault.import.version.range}",
+
+                            org.wso2.carbon.utils;version="${carbon.kernel.package.import.version.range}",
+                            org.wso2.securevault.keystore;version="${org.wso2.securevault.import.version.range}",
+                            org.wso2.securevault.secret;version="${org.wso2.securevault.import.version.range}"
+                        </Import-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <properties>
+        <carbon.kernel.version>4.6.0</carbon.kernel.version>
+        <carbon.kernel.package.import.version.range>[4.5.0, 5.0.0)</carbon.kernel.package.import.version.range>
+
+        <org.wso2.carbon.securevault.import.version.range>[1.0.0, 2.0.0)</org.wso2.carbon.securevault.import.version.range>
+
+        <import.package.version.commons.logging>[1.2.0,2.0.0)</import.package.version.commons.logging>
+        <commons-lang.wso2.osgi.version.range>[2.6.0,3.0.0)</commons-lang.wso2.osgi.version.range>
+        <commons-logging.osgi.version.range>[1.2.0,2.0.0)</commons-logging.osgi.version.range>
+
+        <com.bettercloud.vault.version>5.1.0</com.bettercloud.vault.version>
+        <com.bettercloud.vault.import.version.range>[5.1.0, 6.0.0)</com.bettercloud.vault.import.version.range>
+
+        <org.wso2.securevault.version>1.1.3</org.wso2.securevault.version>
+        <org.wso2.securevault.import.version.range>[1.1.0, 2.0.0)</org.wso2.securevault.import.version.range>
+
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.bettercloud</groupId>
+            <artifactId>vault-java-driver</artifactId>
+            <version>${com.bettercloud.vault.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.securevault</groupId>
+            <artifactId>org.wso2.securevault</artifactId>
+            <version>${org.wso2.securevault.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.utils</artifactId>
+            <version>${carbon.kernel.version}</version>
+        </dependency>
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>wso2-nexus</id>
+            <name>WSO2 internal Repository</name>
+            <url>http://maven.wso2.org/nexus/content/groups/wso2-public/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
+        </repository>
+    </repositories>
+
+</project>
