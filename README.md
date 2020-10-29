@@ -43,11 +43,13 @@ directory.
     secVault.enabled=true
     secretRepositories=vault
     secretRepositories.vault.provider=org.wso2.carbon.securevault.hashicorp.repository.HashiCorpSecretRepositoryProvider
-    secretRepositories.vault.properties.address=http://127.0.0.1:8200
+    secretRepositories.vault.properties.address=https://127.0.0.1:8200
     secretRepositories.vault.properties.namespace=ns1
     secretRepositories.vault.properties.enginePath=wso2is
     secretRepositories.vault.properties.engineVersion=2
     ```
+
+    **Note:** In production, you should always use the vault address with TLS enabled.
 
 4. Add following lines to the `<IS_HOME>/repository/conf/log4j2.properties` file
     ```
