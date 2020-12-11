@@ -31,14 +31,14 @@ public class HashiCorpVaultConstants {
     public static final String CONFIG_FILE_PATH = CarbonUtils.getCarbonConfigDirPath() + File.separator +
             "security" + File.separator + "secret-conf.properties";
 
-    public static final String ADDRESS_PARAMETER = "secretRepositories.vault.properties.address";
-    public static final String NAMESPACE_PARAMETER = "secretRepositories.vault.properties.namespace";
-    public static final String ENGINE_PATH_PARAMETER = "secretRepositories.vault.properties.enginePath";
-    public static final String ENGINE_VERSION_PARAMETER = "secretRepositories.vault.properties.engineVersion";
+    public static final String ADDRESS_PARAMETER = "address";
+    public static final String NAMESPACE_PARAMETER = "namespace";
+    public static final String ENGINE_PATH_PARAMETER = "enginePath";
+    public static final String ENGINE_VERSION_PARAMETER = "engineVersion";
 
     public static final int DEFAULT_ENGINE_VERSION = 2;
 
     public static final String VALUE_PARAMETER = "value";
 
-    public static final String TOKEN_PARAMETER = "VAULT_TOKEN";
+    public static final String CARBON_HOME = "carbon.home";
 }
