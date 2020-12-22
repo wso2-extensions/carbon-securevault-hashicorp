@@ -96,9 +96,18 @@ directory.
 
 ### Step 4: Start the Server
 
-1. Set the `VAULT_TOKEN` environment variable before starting the Identity Server.
+1. Provide the `VAULT_TOKEN` to the prompted message in the console or by creating a new file in the `<IS_HOME>` directory. 
+The file should be named according to your Operating System.
+
     ```
-    export VAULT_TOKEN='<token>'
+    For Linux   : The file name should be hashicorpRootToken-tmp.
+    For Windows : The file name should be hashicorpRootToken-tmp.txt.
+    ```
+    When you add "tmp" to the file name, note that this will automatically get deleted from the file system after server
+    starts. Alternatively, if you want to retain the password file after the server starts, the file should be named as follows:
+    ```
+    For Linux   : The file name should be hashicorpRootToken-persist.
+    For Windows : The file name should be hashicorpRootToken-persist.txt.
     ```
    
 2. Start the WSO2 Identity Server and enter the keystore password at the startup when prompted.

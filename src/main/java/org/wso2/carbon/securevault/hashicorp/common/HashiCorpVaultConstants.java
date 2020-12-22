@@ -40,5 +40,5 @@ public class HashiCorpVaultConstants {
 
     public static final String VALUE_PARAMETER = "value";
 
-    public static final String TOKEN_PARAMETER = "VAULT_TOKEN";
+    public static final String CARBON_HOME = "carbon.home";
 }

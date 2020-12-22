@@ -30,6 +30,15 @@ import org.wso2.securevault.keystore.IdentityKeyStoreWrapper;
 import org.wso2.securevault.keystore.TrustKeyStoreWrapper;
 import org.wso2.securevault.secret.SecretRepository;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.Console;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.Properties;
 
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.ADDRESS_PARAMETER;
@@ -37,8 +46,8 @@ import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstan
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.ENGINE_PATH_PARAMETER;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.ENGINE_VERSION_PARAMETER;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.NAMESPACE_PARAMETER;
-import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.TOKEN_PARAMETER;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.VALUE_PARAMETER;
+import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.CARBON_HOME;
 
 /**
  * HashiCorp Secret Repository.
@@ -51,11 +60,17 @@ public class HashiCorpSecretRepository implements SecretRepository {
     private SecretRepository parentRepository;
     private IdentityKeyStoreWrapper identityKeyStoreWrapper;
     private TrustKeyStoreWrapper trustKeyStoreWrapper;
-    private String token;
     private String address;
     private String namespace;
     private String enginePath;
     private int engineVersion;
+
+    private String textFileName;
+    private String textFileName_tmp;
+    private String textFilePersist;
+    private boolean persistToken = false;
+    private String rootToken;
+    private static File tokenFile;
 
     public HashiCorpSecretRepository(IdentityKeyStoreWrapper identityKeyStoreWrapper,
                                      TrustKeyStoreWrapper trustKeyStoreWrapper) {
@@ -63,7 +78,6 @@ public class HashiCorpSecretRepository implements SecretRepository {
         this.identityKeyStoreWrapper = identityKeyStoreWrapper;
         this.trustKeyStoreWrapper = trustKeyStoreWrapper;
     }
-
     /**
      * Initializes the repository based on provided properties.
      *
@@ -84,14 +98,13 @@ public class HashiCorpSecretRepository implements SecretRepository {
 
             String version = hashiCorpVaultConfigLoader.getProperty(ENGINE_VERSION_PARAMETER);
             engineVersion = version != null ? Integer.parseInt(version) : DEFAULT_ENGINE_VERSION;
+            retrieveRootToken();
         } catch (HashiCorpVaultException e) {
             LOG.error(e.getMessage(), e);
         }
 
-        // Get the vault token
-        token = System.getenv(TOKEN_PARAMETER);
-        if (token == null || token.isEmpty()) {
-            LOG.warn("VAULT_TOKEN environment variable is not set");
+        if (rootToken == null || rootToken.isEmpty()) {
+            LOG.warn("VAULT_TOKEN has not been set");
         }
 
         if (engineVersion != 2) {
@@ -123,7 +136,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
 
             final VaultConfig config = new VaultConfig()
                     .address(address)
-                    .token(token)
+                    .token(rootToken)
                     .engineVersion(engineVersion)
                     .build();
 
@@ -179,4 +192,129 @@ public class HashiCorpSecretRepository implements SecretRepository {
 
         return this.parentRepository;
     }
+
+    /**
+     * Get the root token of the vault. Either by prompting the user via the console or by accessing the text file
+     * containing the root token.
+     */
+    private void retrieveRootToken() throws HashiCorpVaultException {
+
+        String carbonHome = System.getProperty(CARBON_HOME);
+        setTextFileName();
+
+        if (new File(carbonHome + File.separator + textFilePersist).exists()) {
+            persistToken = true;
+        }
+
+        tokenFile = new File(carbonHome + File.separator + textFileName);
+        if (tokenFile.exists()) {
+            rootToken = readToken(tokenFile);
+
+            if (!persistToken) {
+                if (!renameConfigFile(textFileName_tmp)) {
+                    throw new HashiCorpVaultException("Error in renaming password config file.");
+                }
+            }
+        } else {
+            tokenFile = new File(carbonHome + File.separator + textFileName_tmp);
+            if (tokenFile.exists()) {
+                rootToken = readToken(tokenFile);
+
+                if (!persistToken) {
+                    if (deleteConfigFile()) {
+                        throw new HashiCorpVaultException("Error in deleting password config file.");
+                    }
+                }
+            } else {
+                tokenFile = new File(carbonHome + File.separator + textFilePersist);
+                if (tokenFile.exists()) {
+                    rootToken = readToken(tokenFile);
+
+                    if (!persistToken) {
+                        if (deleteConfigFile()) {
+                            throw new HashiCorpVaultException("Error in deleting password config file.");
+                        }
+                    }
+                } else {
+                    Console console;
+                    char[] token;
+                    if ((console = System.console()) != null && (token = console.readPassword("[%s]",
+                            "Enter the Root Token: ")) != null) {
+                        rootToken = String.valueOf(token);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Set the name for the text file which contains the root token.
+     * For Linux: The file name should be hashicorpRootToken-tmp or hashicorpRootToken-persist.
+     * For Windows: The file name should be hashicorpRootToken-tmp.txt or hashicorpRootToken-persist.txt.
+     */
+    private void setTextFileName() {
+
+        String osName = System.getProperty("os.name");
+        if (osName.toLowerCase().contains("win")) {
+            textFileName = "hashicorpRootToken.txt";
+            textFileName_tmp = "hashicorpRootToken-tmp.txt";
+            textFilePersist = "hashicorpRootToken-persist.txt";
+        } else {
+            textFileName = "hashicorpRootToken";
+            textFileName_tmp = "hashicorpRootToken-tmp";
+            textFilePersist = "hashicorpRootToken-persist";
+        }
+    }
+
+    /**
+     * Util method to Read the root token from the text file.
+     *
+     * @param tokenFile File containing the root token.
+     * @return The read token.
+     * @throws HashiCorpVaultException when an error occurred while reading the root token.
+     */
+    private String readToken(File tokenFile) throws HashiCorpVaultException {
+
+        String tokenReadFromFile;
+        try (FileInputStream inputStream = new FileInputStream(tokenFile);
+             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+            tokenReadFromFile = bufferedReader.readLine();
+        } catch (IOException e) {
+            throw new HashiCorpVaultException("Error while reading the root token from " + tokenFile, e);
+        }
+        return tokenReadFromFile;
+    }
+
+    /**
+     * Util method to rename the file containing root token.
+     *
+     * @param fileName Name of the text file.
+     * @return true upon successful renaming.
+     */
+    private boolean renameConfigFile(String fileName) {
+
+        if (tokenFile.exists()) {
+            File newConfigFile = new File(System.getProperty(CARBON_HOME) + File.separator + fileName);
+            return tokenFile.renameTo(newConfigFile);
+        }
+        return false;
+    }
+
+    /**
+     * Util method to delete the temporary text file.
+     *
+     * @return true upon successful deletion.
+     * @throws HashiCorpVaultException when an error occurred while deleting the root token file.
+     */
+    private boolean deleteConfigFile() throws HashiCorpVaultException {
+
+        try (FileOutputStream outputStream = new FileOutputStream(tokenFile);
+             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream))) {
+            bufferedWriter.write("!@#$%^&*()SDFGHJZXCVBNM!@#$%^&*");
+        } catch (IOException e) {
+            throw new HashiCorpVaultException("Error while deleting the " + tokenFile, e);
+        }
+        return !tokenFile.exists() || !tokenFile.delete();
+    }
+
 }
