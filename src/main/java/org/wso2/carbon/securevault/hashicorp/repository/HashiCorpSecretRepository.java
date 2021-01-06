@@ -97,13 +97,13 @@ public class HashiCorpSecretRepository implements SecretRepository {
             enginePath = hashiCorpVaultConfigLoader.getProperty(ENGINE_PATH_PARAMETER);
 
             String version = hashiCorpVaultConfigLoader.getProperty(ENGINE_VERSION_PARAMETER);
-            engineVersion = version != null ? Integer.parseInt(version) : DEFAULT_ENGINE_VERSION;
+            engineVersion = !StringUtils.isEmpty(version) ? Integer.parseInt(version) : DEFAULT_ENGINE_VERSION;
             retrieveRootToken();
         } catch (HashiCorpVaultException e) {
             LOG.error(e.getMessage(), e);
         }
 
-        if (rootToken == null || rootToken.isEmpty()) {
+        if (StringUtils.isEmpty(rootToken)) {
             LOG.warn("VAULT_TOKEN has not been set");
         }
 
@@ -142,13 +142,13 @@ public class HashiCorpSecretRepository implements SecretRepository {
 
             Vault vault = new Vault(config);
             Logical logical = vault.logical();
-            if (namespace != null) {
+            if (StringUtils.isEmpty(namespace)) {
                 logical = logical.withNameSpace(namespace);
             }
             secret = logical.read(sb.toString()).getData()
                     .get(VALUE_PARAMETER);
 
-            if (secret == null) {
+            if (StringUtils.isEmpty(secret)) {
                 LOG.error("Cannot read the vault secret from the HashiCorp vault. " +
                         "Check whether the VAULT_TOKEN is correct and the secret path is available: " + sb.toString());
             }

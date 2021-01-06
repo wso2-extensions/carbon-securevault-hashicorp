@@ -25,7 +25,9 @@
                             org.wso2.carbon.securevault.hashicorp.repository;version="${project.version}"
                         </Export-Package>
                         <Import-Package>
-                            com.bettercloud.vault.*,
+                            com.bettercloud.vault,
+                            com.bettercloud.vault.api,
+                            com.bettercloud.vault.response,
 
                             org.apache.commons.lang;version="${commons-lang.wso2.osgi.version.range}",
                             org.apache.commons.logging;version="${commons-logging.osgi.version.range}",
