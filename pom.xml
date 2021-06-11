@@ -7,6 +7,12 @@
     <version>1.0</version>
     <packaging>bundle</packaging>
 
+    <parent>
+        <groupId>org.wso2</groupId>
+        <artifactId>wso2</artifactId>
+        <version>1.4</version>
+    </parent>
+    
     <build>
         <plugins>
             <plugin>
