@@ -51,6 +51,7 @@ import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstan
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.CARBON_HOME;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.AUTH_TYPE;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.ROLE_ID_PARAMETER;
+import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.TXT;
 
 /**
  * HashiCorp Secret Repository.
@@ -90,6 +91,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
         this.identityKeyStoreWrapper = identityKeyStoreWrapper;
         this.trustKeyStoreWrapper = trustKeyStoreWrapper;
     }
+
     /**
      * Initializes the repository based on provided properties.
      *
@@ -116,10 +118,10 @@ public class HashiCorpSecretRepository implements SecretRepository {
 
             if (authType.equals(AuthType.APP_ROLE)) {
                 roleId = hashiCorpVaultConfigLoader.getProperty(ROLE_ID_PARAMETER);
-                retrieveSecreteId();
-                retrieveServiceToken();
+                secretId = retrieveAuthDetails();
+                accessToken = retrieveServiceToken(roleId, secretId);
             } else {
-                retrieveRootToken();
+                accessToken = retrieveAuthDetails();
             }
 
         } catch (HashiCorpVaultException e) {
@@ -149,49 +151,22 @@ public class HashiCorpSecretRepository implements SecretRepository {
             return alias;
         }
 
-        StringBuilder sb = new StringBuilder()
-                .append(enginePath)
-                .append(SLASH)
-                .append(alias);
+        StringBuilder sb = new StringBuilder().append(enginePath).append(SLASH).append(alias);
 
         String secret = null;
         try {
 
-            VaultConfig config = new VaultConfig()
-                    .address(address)
-                    .token(accessToken)
-                    .engineVersion(engineVersion)
-                    .build();
-
-            Vault vault = new Vault(config);
-            Logical logical = vault.logical();
-            if (!StringUtils.isEmpty(namespace)) {
-                logical = logical.withNameSpace(namespace);
-            }
-            secret = logical.read(sb.toString()).getData()
-                    .get(VALUE_PARAMETER);
+            secret = getSecretFromVault(address, accessToken, engineVersion, namespace, sb.toString());
 
             if (StringUtils.isEmpty(secret)) {
-                LOG.info("Cannot read the vault secret from the HashiCorp vault. " +
-                        "Check whether the VAULT_TOKEN is valid and the secret path is available: " + sb.toString());
+                LOG.debug("Error while reading the vault secret value");
                 if (authType.equals(AuthType.APP_ROLE)) {
-                    LOG.info("Attempting to renew service token...");
+                    LOG.debug("Attempting to renew service token...");
 
-                    retrieveServiceToken();
+                    accessToken = retrieveServiceToken(roleId, secretId);
 
-                    config = new VaultConfig()
-                            .address(address)
-                            .token(accessToken)
-                            .engineVersion(engineVersion)
-                            .build();
+                    secret = getSecretFromVault(address, accessToken, engineVersion, namespace, sb.toString());
 
-                    vault = new Vault(config);
-                    logical = vault.logical();
-                    if (!StringUtils.isEmpty(namespace)) {
-                        logical = logical.withNameSpace(namespace);
-                    }
-
-                    secret = logical.read(sb.toString()).getData().get(VALUE_PARAMETER);
                     if (StringUtils.isEmpty(secret)) {
                         LOG.error("Error while reading the vault secret value for key: " + sb.toString());
                     }
@@ -199,11 +174,32 @@ public class HashiCorpSecretRepository implements SecretRepository {
                     LOG.error("Error while reading the vault secret value for key: " + sb.toString());
                 }
             }
-        } catch (VaultException | HashiCorpVaultException e) {
+        } catch (HashiCorpVaultException e) {
             LOG.error("Error retrieving service token or re-reading secret: " + sb.toString(), e);
         }
 
         return secret;
+    }
+
+    /**
+     * returns secret from vault
+     */
+    public String getSecretFromVault(String address, String accessToken, Integer engineVersion, String namespace,
+                                     String path) throws HashiCorpVaultException {
+        try {
+            VaultConfig config = new VaultConfig().address(address).token(accessToken).engineVersion(engineVersion)
+                    .build();
+
+            Vault vault = new Vault(config);
+            Logical logical = vault.logical();
+            if (StringUtils.isNotEmpty(namespace)) {
+                logical = logical.withNameSpace(namespace);
+            }
+            return logical.read(path).getData().get(VALUE_PARAMETER);
+
+        } catch (VaultException e) {
+            throw new HashiCorpVaultException("Error retrieving service token using AppRole", e);
+        }
     }
 
     /**
@@ -241,65 +237,13 @@ public class HashiCorpSecretRepository implements SecretRepository {
     }
 
     /**
-     * Get the root token of the vault. Either by prompting the user via the console or by accessing the text file
-     * containing the root token.
-     */
-    private void retrieveRootToken() throws HashiCorpVaultException {
-
-        String carbonHome = System.getProperty(CARBON_HOME);
-        setTextFileName();
-
-        if (new File(carbonHome + File.separator + textFilePersist).exists()) {
-            persistToken = true;
-        }
-
-        tokenFile = new File(carbonHome + File.separator + textFileName);
-        if (tokenFile.exists()) {
-            accessToken = readToken(tokenFile);
-
-            if (!persistToken) {
-                if (!renameConfigFile(textFileName_tmp)) {
-                    throw new HashiCorpVaultException("Error in renaming password config file.");
-                }
-            }
-        } else {
-            tokenFile = new File(carbonHome + File.separator + textFileName_tmp);
-            if (tokenFile.exists()) {
-                accessToken = readToken(tokenFile);
-
-                if (!persistToken) {
-                    if (deleteConfigFile()) {
-                        throw new HashiCorpVaultException("Error in deleting password config file.");
-                    }
-                }
-            } else {
-                tokenFile = new File(carbonHome + File.separator + textFilePersist);
-                if (tokenFile.exists()) {
-                    accessToken = readToken(tokenFile);
-
-                    if (!persistToken) {
-                        if (deleteConfigFile()) {
-                            throw new HashiCorpVaultException("Error in deleting password config file.");
-                        }
-                    }
-                } else {
-                    Console console;
-                    char[] token;
-                    if ((console = System.console()) != null && (token = console.readPassword("[%s]",
-                            "Enter the Root Token: ")) != null) {
-                        accessToken = String.valueOf(token);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Get the secret id of the vault. Either by prompting the user via the console or by accessing the text file
+     * Get the secret id or root token of the vault. Either by prompting the user via the console or by accessing the
+     * text file
      * containing the secret id.
      */
-    private void retrieveSecreteId() throws HashiCorpVaultException {
+    private String retrieveAuthDetails() throws HashiCorpVaultException {
 
+        String credential = "";
         String carbonHome = System.getProperty(CARBON_HOME);
         setTextFileName();
 
@@ -309,7 +253,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
 
         tokenFile = new File(carbonHome + File.separator + textFileName);
         if (tokenFile.exists()) {
-            secretId = readToken(tokenFile);
+            credential = readToken(tokenFile);
 
             if (!persistToken) {
                 if (!renameConfigFile(textFileName_tmp)) {
@@ -319,7 +263,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
         } else {
             tokenFile = new File(carbonHome + File.separator + textFileName_tmp);
             if (tokenFile.exists()) {
-                secretId = readToken(tokenFile);
+                credential = readToken(tokenFile);
 
                 if (!persistToken) {
                     if (deleteConfigFile()) {
@@ -329,7 +273,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
             } else {
                 tokenFile = new File(carbonHome + File.separator + textFilePersist);
                 if (tokenFile.exists()) {
-                    secretId = readToken(tokenFile);
+                    credential = readToken(tokenFile);
 
                     if (!persistToken) {
                         if (deleteConfigFile()) {
@@ -339,13 +283,21 @@ public class HashiCorpSecretRepository implements SecretRepository {
                 } else {
                     Console console;
                     char[] token;
-                    if ((console = System.console()) != null && (token = console.readPassword("[%s]",
-                                                                                              "Enter the Secrete Id: ")) != null) {
-                        secretId = String.valueOf(token);
+                    String enterMsgTxt;
+                    if (authType.equals(AuthType.APP_ROLE)) {
+                        enterMsgTxt = "Enter the Secrete Id: ";
+                    } else {
+                        enterMsgTxt = "Enter the Root Token: ";
+                    }
+
+                    if ((console = System.console()) != null && (token = console.readPassword("[%s]", enterMsgTxt))
+                            != null) {
+                        credential = String.valueOf(token);
                     }
                 }
             }
         }
+        return credential;
     }
 
     /**
@@ -357,21 +309,20 @@ public class HashiCorpSecretRepository implements SecretRepository {
 
         String osName = System.getProperty("os.name");
 
-
-        if (authType.equals(AuthType.APP_ROLE)){
+        if (authType.equals(AuthType.APP_ROLE)) {
             textFileName = "hashicorpSecretId";
             textFileName_tmp = "hashicorpSecretId-tmp";
             textFilePersist = "hashicorpSecretId-persist";
-        } else{
+        } else {
             textFileName = "hashicorpRootToken";
             textFileName_tmp = "hashicorpRootToken-tmp";
             textFilePersist = "hashicorpRootToken-persist";
         }
 
         if (osName.toLowerCase().contains("win")) {
-            textFileName = textFileName+".txt";
-            textFileName_tmp = textFileName_tmp+".txt";
-            textFilePersist = textFilePersist+".txt";
+            textFileName = textFileName + TXT;
+            textFileName_tmp = textFileName_tmp + TXT;
+            textFilePersist = textFilePersist + TXT;
         }
     }
 
@@ -379,20 +330,18 @@ public class HashiCorpSecretRepository implements SecretRepository {
      * Get the secret id of the vault. Either by prompting the user via the console or by accessing the text file
      * containing the secret id.
      */
-
-    private void retrieveServiceToken() throws HashiCorpVaultException {
+    private String retrieveServiceToken(String roleId, String secretId) throws HashiCorpVaultException {
         try {
-            final VaultConfig config = new VaultConfig()
-                    .address(address)
-                    .build();
+            final VaultConfig config = new VaultConfig().address(address).engineVersion(engineVersion).build();
 
             Vault vault = new Vault(config);
             AuthResponse response = vault.auth().loginByAppRole(roleId, secretId);
 
-            // Store the service token
-            accessToken = response.getAuthClientToken();
+            String accessTokenTemp = response.getAuthClientToken();
 
             LOG.info("Service token retrieved successfully.");
+
+            return accessTokenTemp;
 
         } catch (VaultException e) {
             throw new HashiCorpVaultException("Error retrieving service token using AppRole", e);
@@ -410,7 +359,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
 
         String tokenReadFromFile;
         try (FileInputStream inputStream = new FileInputStream(tokenFile);
-             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
             tokenReadFromFile = bufferedReader.readLine();
         } catch (IOException e) {
             throw new HashiCorpVaultException("Error while reading the root token from " + tokenFile, e);
@@ -442,7 +391,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
     private boolean deleteConfigFile() throws HashiCorpVaultException {
 
         try (FileOutputStream outputStream = new FileOutputStream(tokenFile);
-             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream))) {
+                BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream))) {
             bufferedWriter.write("!@#$%^&*()SDFGHJZXCVBNM!@#$%^&*");
         } catch (IOException e) {
             throw new HashiCorpVaultException("Error while deleting the " + tokenFile, e);
