@@ -36,9 +36,14 @@ public class HashiCorpVaultConstants {
     public static final String ENGINE_PATH_PARAMETER = "secretRepositories.vault.properties.enginePath";
     public static final String ENGINE_VERSION_PARAMETER = "secretRepositories.vault.properties.engineVersion";
 
+    public static final String AUTH_TYPE = "secretRepositories.vault.properties.authType";
+    public static final String ROLE_ID_PARAMETER = "secretRepositories.vault.properties.roleId";
+
     public static final int DEFAULT_ENGINE_VERSION = 2;
 
     public static final String VALUE_PARAMETER = "value";
 
     public static final String CARBON_HOME = "carbon.home";
+
+    public static final String TXT = ".txt";
 }
