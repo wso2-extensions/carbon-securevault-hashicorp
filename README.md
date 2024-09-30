@@ -244,7 +244,7 @@ The file should be named according to your Operating System.
 
 ### Step 4: Start the Server
 
-1. Provide the `VAULT_TOKEN` to the prompted message in the console or by creating a new file in the `<IS_HOME>`
+1. Provide the `Secret ID` to the prompted message in the console or by creating a new file in the `<IS_HOME>`
    directory.
    The file should be named according to your Operating System.
 

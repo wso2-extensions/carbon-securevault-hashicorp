@@ -285,7 +285,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
                     char[] token;
                     String enterMsgTxt;
                     if (authType.equals(AuthType.APP_ROLE)) {
-                        enterMsgTxt = "Enter the Secrete Id: ";
+                        enterMsgTxt = "Enter the Secret Id: ";
                     } else {
                         enterMsgTxt = "Enter the Root Token: ";
                     }
