@@ -24,7 +24,7 @@
 ### Step 2: Configure HashiCorp Vault extension
 
 1. Build the HashiCorp Vault Integration OSGI bundle using `mvn clean install` and copy
-the `target/org.wso2.carbon.securevault.hashicorp-1.0.jar` file to `<IS_HOME>/repository/components/dropin/`
+the `target/org.wso2.carbon.securevault.hashicorp-1.0.jar` file to `<IS_HOME>/repository/components/dropins/`
 directory.
 
 2. Add **HashiCorp Vault Java Driver** (Eg: `vault-java-driver-5.1.0.jar`) to the
@@ -133,7 +133,7 @@ The file should be named according to your Operating System.
    }
    ```
 
-   Upload kv policy as bellow
+   Upload kv policy as below
 
    ```
    vault policy write kv-read-write kv-read-write.hcl
@@ -153,12 +153,12 @@ The file should be named according to your Operating System.
          token_max_ttl="72h"
       ```  
 
-   Get the role-id as bellow
+   Get the role-id as below
    ```
    vault read auth/approle/role/my-role/role-id
    ```
 
-   Get the secret-id as bellow
+   Get the secret-id as below
 
    ```
    vault write -f auth/approle/role/my-role/secret-id
@@ -182,7 +182,7 @@ The file should be named according to your Operating System.
 ### Step 2: Configure HashiCorp Vault extension
 
 1. Build the HashiCorp Vault Integration OSGI bundle using `mvn clean install` and copy
-   the `target/org.wso2.carbon.securevault.hashicorp-1.0.jar` file to `<IS_HOME>/repository/components/dropin/`
+   the `target/org.wso2.carbon.securevault.hashicorp-1.0.jar` file to `<IS_HOME>/repository/components/dropins/`
    directory.
 
 2. Add **HashiCorp Vault Java Driver** (Eg: `vault-java-driver-5.1.0.jar`) to the
