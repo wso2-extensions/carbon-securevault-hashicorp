@@ -18,6 +18,7 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+                <version>${maven.bundle.plugin.version}</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
@@ -83,6 +84,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
     
         <jacoco.version>0.8.12</jacoco.version>
+        <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
     </properties>
 
     <dependencies>
