@@ -23,8 +23,8 @@ import com.bettercloud.vault.VaultException;
 import com.bettercloud.vault.api.Logical;
 import com.bettercloud.vault.response.AuthResponse;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.wso2.carbon.securevault.hashicorp.config.HashiCorpVaultConfigLoader;
 import org.wso2.carbon.securevault.hashicorp.exception.HashiCorpVaultException;
 import org.wso2.securevault.keystore.IdentityKeyStoreWrapper;
@@ -58,7 +58,7 @@ import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstan
  */
 public class HashiCorpSecretRepository implements SecretRepository {
 
-    private static final Log LOG = LogFactory.getLog(HashiCorpSecretRepository.class);
+    private static final Logger LOG = LogManager.getLogger(HashiCorpSecretRepository.class);
     private static final String SLASH = "/";
 
     private SecretRepository parentRepository;
