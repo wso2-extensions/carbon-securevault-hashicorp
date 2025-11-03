@@ -35,7 +35,6 @@
                             com.bettercloud.vault.response,
 
                             org.apache.commons.lang;version="${commons-lang.wso2.osgi.version.range}",
-                            org.apache.commons.logging;version="${commons-logging.osgi.version.range}",
 
                             org.wso2.carbon.utils;version="${carbon.kernel.package.import.version.range}",
                             org.wso2.securevault.keystore;version="${org.wso2.securevault.import.version.range}",
@@ -72,7 +71,6 @@
 
         <import.package.version.commons.logging>[1.2.0,2.0.0)</import.package.version.commons.logging>
         <commons-lang.wso2.osgi.version.range>[2.6.0,3.0.0)</commons-lang.wso2.osgi.version.range>
-        <commons-logging.osgi.version.range>[1.2.0,2.0.0)</commons-logging.osgi.version.range>
 
         <com.bettercloud.vault.version>5.1.0</com.bettercloud.vault.version>
         <com.bettercloud.vault.import.version.range>[5.1.0, 6.0.0)</com.bettercloud.vault.import.version.range>
