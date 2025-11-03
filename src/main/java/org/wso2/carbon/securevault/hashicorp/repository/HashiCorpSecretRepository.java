@@ -101,6 +101,8 @@ public class HashiCorpSecretRepository implements SecretRepository {
     @Override
     public void init(Properties properties, String id) {
 
+        LOG.info("Initializing HashiCorp Secure Vault");
+
         // Load Configurations
         HashiCorpVaultConfigLoader hashiCorpVaultConfigLoader = HashiCorpVaultConfigLoader.getInstance();
         try {
