@@ -12,6 +12,14 @@
         <artifactId>wso2</artifactId>
         <version>1.4</version>
     </parent>
+
+    <scm>
+        <url>https://github.com/wso2-extensions/carbon-securevault-hashicorp.git</url>
+        <developerConnection>scm:git:https://github.com/wso2-extensions/carbon-securevault-hashicorp.git
+        </developerConnection>
+        <connection>scm:git:https://github.com/wso2-extensions/carbon-securevault-hashicorp.git</connection>
+        <tag>HEAD</tag>
+    </scm>
     
     <build>
         <plugins>
