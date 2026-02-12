@@ -1,0 +1,17 @@
+{
+  "name": "HashiCorp Vault Connector",
+  "owner": "WSO2",
+  "category": "Secure Vault",
+  "documentationUrl": "https://github.com/wso2-extensions/carbon-securevault-hashicorp/blob/master/README.md",
+  "description": "The HashiCorp Vault Connector facilitates the integration of HashiCorp Vault as an external secret repository for WSO2 products, allowing for secure storage and retrieval of passwords and other secrets.",
+  "status": "Active",
+  "labels": ["Secret Management", "HashiCorp", "Security"],
+  "releases": [
+    {
+      "tagName": "v1.0.0",
+      "products": [
+        "IS 7.2.0"
+      ]
+    }
+  ]
+}
