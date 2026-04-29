@@ -41,6 +41,7 @@
                             com.bettercloud.vault,
                             com.bettercloud.vault.api,
                             com.bettercloud.vault.response,
+                            com.bettercloud.vault.rest,
 
                             org.apache.commons.lang;version="${commons-lang.wso2.osgi.version.range}",
 

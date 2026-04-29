@@ -22,6 +22,7 @@ import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
 import com.bettercloud.vault.api.Logical;
 import com.bettercloud.vault.response.AuthResponse;
+import com.bettercloud.vault.response.LogicalResponse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -40,6 +41,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.ADDRESS_PARAMETER;
@@ -60,6 +62,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
 
     private static final Log LOG = LogFactory.getLog(HashiCorpSecretRepository.class);
     private static final String SLASH = "/";
+    private static final int HTTP_OK = 200;
 
     private SecretRepository parentRepository;
     private IdentityKeyStoreWrapper identityKeyStoreWrapper;
@@ -187,15 +190,19 @@ public class HashiCorpSecretRepository implements SecretRepository {
     public String getSecretFromVault(String address, String accessToken, Integer engineVersion, String namespace,
                                      String path) throws HashiCorpVaultException {
         try {
-            VaultConfig config = new VaultConfig().address(address).token(accessToken).engineVersion(engineVersion)
-                    .build();
-
+            VaultConfig vaultConfig = new VaultConfig().address(address).token(accessToken)
+                    .engineVersion(engineVersion);
+            String configuredNamespace = getConfiguredNamespace(namespace);
+            // Configure namespace only when it is explicitly provided.
+            if (configuredNamespace != null) {
+                vaultConfig.nameSpace(configuredNamespace);
+            }
+            VaultConfig config = vaultConfig.build();
             Vault vault = new Vault(config);
             Logical logical = vault.logical();
-            if (StringUtils.isNotEmpty(namespace)) {
-                logical = logical.withNameSpace(namespace);
-            }
-            return logical.read(path).getData().get(VALUE_PARAMETER);
+            LogicalResponse logicalResponse = logical.read(path);
+            logVaultReadFailure(logicalResponse);
+            return logicalResponse.getData().get(VALUE_PARAMETER);
 
         } catch (VaultException e) {
             throw new HashiCorpVaultException("Error retrieving service token using AppRole", e);
@@ -332,7 +339,13 @@ public class HashiCorpSecretRepository implements SecretRepository {
      */
     private String retrieveServiceToken(String roleId, String secretId) throws HashiCorpVaultException {
         try {
-            final VaultConfig config = new VaultConfig().address(address).engineVersion(engineVersion).build();
+            VaultConfig vaultConfig = new VaultConfig().address(address).engineVersion(engineVersion);
+            String configuredNamespace = getConfiguredNamespace(namespace);
+            // Configure namespace only when it is explicitly provided.
+            if (configuredNamespace != null) {
+                vaultConfig.nameSpace(configuredNamespace);
+            }
+            final VaultConfig config = vaultConfig.build();
 
             Vault vault = new Vault(config);
             AuthResponse response = vault.auth().loginByAppRole(roleId, secretId);
@@ -346,6 +359,58 @@ public class HashiCorpSecretRepository implements SecretRepository {
         } catch (VaultException e) {
             throw new HashiCorpVaultException("Error retrieving service token using AppRole", e);
         }
+    }
+
+    /**
+     * Returns a trimmed Vault namespace when one is configured.
+     *
+     * @param namespace     The Vault namespace to be trimmed and returned.
+     * @return              A trimmed Vault namespace when one is configured, else null.
+     */
+    private String getConfiguredNamespace(String namespace) {
+
+        if (StringUtils.isEmpty(namespace)) {
+            return null;
+        }
+
+        String trimmedNamespace = namespace.trim();
+        if (StringUtils.isEmpty(trimmedNamespace)) {
+            return null;
+        }
+        return trimmedNamespace;
+    }
+
+    /**
+     * Logs Vault read failures.
+     *
+     * @param logicalResponse Response returned by the Vault logical read operation.
+     */
+    private void logVaultReadFailure(LogicalResponse logicalResponse) {
+
+        int responseStatus = logicalResponse.getRestResponse().getStatus();
+        if (responseStatus == HTTP_OK) {
+            return;
+        }
+        LOG.warn("Error occurred while reading a secret from HashiCorp Vault. Vault responded with HTTP status code: "
+                + responseStatus);
+        if (LOG.isDebugEnabled()) {
+            String responseBody = getVaultResponseBody(logicalResponse.getRestResponse().getBody());
+            LOG.debug("HashiCorp Vault secret read response body: " + responseBody);
+        }
+    }
+
+    /**
+     * Returns the Vault response body as a readable string.
+     *
+     * @param responseBody Response body returned by Vault.
+     * @return Response body decoded as UTF-8, or an empty string when the response body is unavailable.
+     */
+    private String getVaultResponseBody(byte[] responseBody) {
+
+        if (responseBody == null || responseBody.length == 0) {
+            return "";
+        }
+        return new String(responseBody, StandardCharsets.UTF_8).trim();
     }
 
     /**
