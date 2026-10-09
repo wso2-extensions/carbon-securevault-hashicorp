@@ -17,9 +17,9 @@
  */
 package org.wso2.carbon.securevault.hashicorp.common;
 
-import org.wso2.carbon.utils.CarbonUtils;
-
 import java.io.File;
+
+import org.wso2.carbon.utils.CarbonUtils;
 
 /**
  * HashiCorp vault constants.
@@ -38,6 +38,8 @@ public class HashiCorpVaultConstants {
 
     public static final String AUTH_TYPE = "secretRepositories.vault.properties.authType";
     public static final String ROLE_ID_PARAMETER = "secretRepositories.vault.properties.roleId";
+    public static final String APP_ROLE_PATH_PARAMETER ="secretRepositories.vault.properties.appRolePath";
+    public static final String DEFAULT_APP_ROLE_PATH = "approle";
 
     public static final int DEFAULT_ENGINE_VERSION = 2;
 
