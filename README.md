@@ -210,7 +210,7 @@ The file should be named according to your Operating System.
    secretRepositories.vault.properties.appRolePath=approle
     ```
 
-   **Note:** `approle` is the default AppRole mount path. Replace it with your custom mount path if AppRole is mounted elsewhere.
+   **Note:** `approle` is the default AppRole authentication mount path. If AppRole is mounted at a different path, replace `approle` with that mount path
 
    **Note:** In production, you should always use the vault address with TLS enabled.
 
