@@ -17,21 +17,6 @@
  */
 package org.wso2.carbon.securevault.hashicorp.repository;
 
-import com.bettercloud.vault.Vault;
-import com.bettercloud.vault.VaultConfig;
-import com.bettercloud.vault.VaultException;
-import com.bettercloud.vault.api.Logical;
-import com.bettercloud.vault.response.AuthResponse;
-import com.bettercloud.vault.response.LogicalResponse;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.securevault.hashicorp.config.HashiCorpVaultConfigLoader;
-import org.wso2.carbon.securevault.hashicorp.exception.HashiCorpVaultException;
-import org.wso2.securevault.keystore.IdentityKeyStoreWrapper;
-import org.wso2.securevault.keystore.TrustKeyStoreWrapper;
-import org.wso2.securevault.secret.SecretRepository;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Console;
@@ -44,16 +29,34 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
+import com.bettercloud.vault.Vault;
+import com.bettercloud.vault.VaultConfig;
+import com.bettercloud.vault.VaultException;
+import com.bettercloud.vault.api.Logical;
+import com.bettercloud.vault.response.AuthResponse;
+import com.bettercloud.vault.response.LogicalResponse;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.securevault.hashicorp.config.HashiCorpVaultConfigLoader;
+import org.wso2.carbon.securevault.hashicorp.exception.HashiCorpVaultException;
+import org.wso2.securevault.keystore.IdentityKeyStoreWrapper;
+import org.wso2.securevault.keystore.TrustKeyStoreWrapper;
+import org.wso2.securevault.secret.SecretRepository;
+
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.ADDRESS_PARAMETER;
+import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.APP_ROLE_PATH_PARAMETER;
+import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.AUTH_TYPE;
+import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.CARBON_HOME;
+import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.DEFAULT_APP_ROLE_PATH;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.DEFAULT_ENGINE_VERSION;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.ENGINE_PATH_PARAMETER;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.ENGINE_VERSION_PARAMETER;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.NAMESPACE_PARAMETER;
-import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.VALUE_PARAMETER;
-import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.CARBON_HOME;
-import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.AUTH_TYPE;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.ROLE_ID_PARAMETER;
 import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.TXT;
+import static org.wso2.carbon.securevault.hashicorp.common.HashiCorpVaultConstants.VALUE_PARAMETER;
 
 /**
  * HashiCorp Secret Repository.
@@ -79,6 +82,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
     private String accessToken;
     private String roleId;
     private String secretId;
+    private String appRolePath;
     private static File tokenFile;
 
     private enum AuthType {
@@ -121,6 +125,12 @@ public class HashiCorpSecretRepository implements SecretRepository {
 
             if (authType.equals(AuthType.APP_ROLE)) {
                 roleId = hashiCorpVaultConfigLoader.getProperty(ROLE_ID_PARAMETER);
+
+                appRolePath = hashiCorpVaultConfigLoader.getProperty(APP_ROLE_PATH_PARAMETER);
+                if (StringUtils.isEmpty(appRolePath)) {
+                    appRolePath = DEFAULT_APP_ROLE_PATH;
+                }
+
                 secretId = retrieveAuthDetails();
                 accessToken = retrieveServiceToken(roleId, secretId);
             } else {
@@ -348,7 +358,7 @@ public class HashiCorpSecretRepository implements SecretRepository {
             final VaultConfig config = vaultConfig.build();
 
             Vault vault = new Vault(config);
-            AuthResponse response = vault.auth().loginByAppRole(roleId, secretId);
+            AuthResponse response = vault.auth().loginByAppRole(appRolePath, roleId, secretId);
 
             String accessTokenTemp = response.getAuthClientToken();
 
