@@ -93,6 +93,8 @@
     
         <jacoco.version>0.8.12</jacoco.version>
         <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
+        <testng.version>7.4.0</testng.version>
+        <mockito.version>3.6.28</mockito.version>
     </properties>
 
     <dependencies>
@@ -115,6 +117,18 @@
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
             <version>${jacoco.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
