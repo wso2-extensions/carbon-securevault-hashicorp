@@ -93,7 +93,7 @@
     
         <jacoco.version>0.8.12</jacoco.version>
         <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
-        <testng.version>7.4.0</testng.version>
+        <testng.version>7.5.1</testng.version>
         <mockito.version>3.6.28</mockito.version>
     </properties>
 
